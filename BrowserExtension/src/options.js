@@ -25,6 +25,37 @@ async function save() {
   setTimeout(() => ($("status").textContent = ""), 1500);
 }
 
+async function test() {
+  const endpointUrl = $("endpointUrl").value.trim();
+  const authToken = $("authToken").value.trim();
+  if (!endpointUrl) {
+    $("status").textContent = "Set endpoint URL first.";
+    return;
+  }
+
+  // Replace /vote-event with /vote-event/validate if user pasted the main endpoint.
+  const url = endpointUrl.replace(/\/vote-event\/?$/, "/vote-event/validate");
+
+  $("status").textContent = "Testing…";
+  const res = await fetch(url, {
+    method: "POST",
+    headers: {
+      "content-type": "application/json",
+      ...(authToken ? { "x-mudae-auth": authToken } : {})
+    },
+    body: JSON.stringify({
+      source: "topgg",
+      botId: $("botId").value.trim() || DEFAULTS.botId,
+      discordUserId: "0",
+      votedAt: Date.now(),
+      pageUrl: "https://top.gg/"
+    })
+  });
+
+  const text = await res.text().catch(() => "");
+  $("status").textContent = res.ok ? "Test OK." : `Test failed: ${res.status} ${text}`.trim();
+}
+
 document.addEventListener("DOMContentLoaded", () => {
   load().catch((e) => {
     console.error("Options load failed:", e);
@@ -35,6 +66,13 @@ document.addEventListener("DOMContentLoaded", () => {
     save().catch((e) => {
       console.error("Options save failed:", e);
       $("status").textContent = "Failed to save.";
+    });
+  });
+
+  $("test").addEventListener("click", () => {
+    test().catch((e) => {
+      console.error("Options test failed:", e);
+      $("status").textContent = "Test failed.";
     });
   });
 });
