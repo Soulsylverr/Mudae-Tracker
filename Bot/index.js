@@ -15,7 +15,7 @@ const { handlePMessage } = require('./commands/p');
 const { handleOhMessage } = require('./commands/oh');
 const { handleRollMessage, isRollCommand } = require('./commands/roll');
 const { handleClaimMessage } = require('./commands/claim');
-const { handleSetRolls } = require('./commands/setRolls');
+const { handleSetRolls } = require('./commands/admin');
 const { loadGuildMembers } = require('./lib/memberNames');
 
 const MUDAE_BOT_ID = process.env.MUDAE_BOT_ID;
@@ -63,7 +63,7 @@ client.on('messageCreate', (msg) => {
 
   // The admin command uses its own prefix and does not collide with Mudae commands.
   if (msg.content.trim().startsWith('%setrolls')) {
-    handleAdminCommand(msg).catch((err) => console.error('[admin] Error:', err));
+    handleSetRolls(msg).catch((err) => console.error('[admin] Error:', err));
     return;
   }
 
