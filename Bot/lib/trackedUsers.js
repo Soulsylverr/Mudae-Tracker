@@ -5,7 +5,8 @@
 const TRACKED_USER_IDS = [
     "269532849898651648", // Soulsylverr
     "705488092072640535", // Soulsylverr2
-    "1507072744632881382" // Soulsylverr3
+    "1507072744632881382", // Soulsylverr3
+    "202487844546150401", // Florian
 ]
 
 function isTrackedUser(userId) {
