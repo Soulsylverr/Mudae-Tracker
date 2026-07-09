@@ -18,6 +18,7 @@ module.exports = class MudaeTracker {
       { id: "rt", label: "RT", kind: "rt" },
       { id: "p", label: "Pokeslot", kind: "timer", key: "p" },
       { id: "oh", label: "Ouroharvest", kind: "oh" },
+      { id: "oc", label: "Ourochest", kind: "oc" },
       { id: "vote", label: "Vote", kind: "timer", key: "vote", timeField: "readyAt", usedField: "lastVoted" },
     ];
 
@@ -56,6 +57,7 @@ module.exports = class MudaeTracker {
         rt: false,
         p: false,
         oh: false,
+        oc: false,
         vote: true,
       },
     };
@@ -259,6 +261,13 @@ module.exports = class MudaeTracker {
     const ohRemaining =
       diamondLevel > 0 ? Math.max(0, diamondLevel - ohUsesToday) : 0;
 
+    const ocDailyLimit = diamondLevel >= 4 ? 1 : 0;
+    const ocState = state.oc;
+    const ocUsesToday =
+      ocState?.lastResetDate === todayUTC ? Number(ocState.usesUsed) || 0 : 0;
+    const ocRemaining =
+      ocDailyLimit > 0 ? Math.max(0, ocDailyLimit - ocUsesToday) : 0;
+
     const rtTimer = timerRow("rt");
 
     return {
@@ -293,6 +302,20 @@ module.exports = class MudaeTracker {
           diamondLevel === 0
             ? "Locked"
             : `${ohRemaining}/${diamondLevel} today`,
+      },
+      oc: {
+        status:
+          ocDailyLimit === 0
+            ? "locked"
+            : ocRemaining > 0
+              ? "ready"
+              : "used",
+        value:
+          ocDailyLimit === 0
+            ? "Locked"
+            : ocRemaining > 0
+              ? "Ready"
+              : "Used today",
       },
     };
   }
@@ -608,7 +631,7 @@ module.exports = class MudaeTracker {
             <span class="mudae-label">Claim · <span class="${this.valueClass(vm.claim.status)}">${vm.claim.detail}</span></span>
             <span class="mudae-value mudae-wait">${vm.claim.value}</span>
           </div>`;
-      } else if (stat.kind === "rt" || stat.kind === "oh") {
+      } else if (stat.kind === "rt" || stat.kind === "oh" || stat.kind === "oc") {
         const row = vm[stat.id];
         html += `
           <div class="mudae-row">
