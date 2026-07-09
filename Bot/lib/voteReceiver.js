@@ -46,7 +46,14 @@ function startVoteReceiverServer() {
   const server = http.createServer(async (req, res) => {
     try {
       const url = new URL(req.url, `http://${req.headers.host || 'localhost'}`);
-      if (req.method !== 'POST' || url.pathname !== '/vote-event') {
+      if (req.method === 'GET' && url.pathname === '/health') {
+        json(res, 200, { ok: true });
+        return;
+      }
+
+      const isValidate = req.method === 'POST' && url.pathname === '/vote-event/validate';
+      const isVoteEvent = req.method === 'POST' && url.pathname === '/vote-event';
+      if (!isValidate && !isVoteEvent) {
         res.writeHead(404);
         res.end('Not found');
         return;
@@ -87,8 +94,13 @@ function startVoteReceiverServer() {
         return;
       }
 
+      if (isValidate) {
+        json(res, 200, { ok: true, validated: true });
+        return;
+      }
+
       await writeVote(userId, votedAt);
-      json(res, 200, { ok: true });
+      json(res, 200, { ok: true, written: true });
     } catch (e) {
       console.error('[vote] receiver error:', e);
       json(res, 500, { ok: false, error: 'server_error' });
