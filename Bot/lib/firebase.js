@@ -131,17 +131,6 @@ const { currentRollWindowStart, currentClaimWindowStart } = require('./fixedSche
 
 const DEFAULT_MAX_ROLLS = 10; // Fallback if no value has been set for a user yet
 
-/**
- * Sets the max-rolls value for a user (via the %setrolls admin command).
- * @param {string} userId
- * @param {number} maxRolls
- */
-async function setMaxRolls(userId, maxRolls) {
-  if (!isTrackedUser(userId)) return;
-
-  await db.ref(`/users/${userId}/config/maxRolls`).set(maxRolls);
-}
-
 const DEFAULT_EMERALD_LEVEL = 0;
 const DEFAULT_DIAMOND_LEVEL = 0;
 
@@ -278,7 +267,6 @@ module.exports = {
   recordOuroharvestUsage,
   recordOurochestUsage,
   ocDailyLimit,
-  setMaxRolls,
   getMaxRolls,
   setUserSetup,
   getEmeraldLevel,
