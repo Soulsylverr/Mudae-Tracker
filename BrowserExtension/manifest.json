@@ -1,0 +1,24 @@
+{
+  "manifest_version": 3,
+  "name": "Mudae Vote Tracker",
+  "version": "0.1.0",
+  "description": "Tracks top.gg votes for Mudae and reports userId + timestamp to your backend.",
+  "action": {
+    "default_title": "Mudae Vote Tracker",
+    "default_popup": "popup.html"
+  },
+  "options_page": "options.html",
+  "permissions": ["storage", "alarms"],
+  "host_permissions": ["https://top.gg/*"],
+  "background": {
+    "service_worker": "src/background.js"
+  },
+  "content_scripts": [
+    {
+      "matches": ["https://top.gg/*"],
+      "js": ["src/content.js"],
+      "run_at": "document_idle"
+    }
+  ]
+}
+
