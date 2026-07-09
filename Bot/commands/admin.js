@@ -1,31 +1,35 @@
 // commands/admin.js
 //
-// %setrolls <@user> <amount> - sets the max-rolls value for a user.
+// %setup <maxRolls> <EmeraldBadgeLevel> <DiamondBadgeLevel>
 // It intentionally uses its own prefix ("%") to avoid colliding with Mudae's "$"
 // commands.
 
-const { setMaxRolls } = require('../lib/firebase');
+const { setUserSetup } = require('../lib/firebase');
 
-const SETROLLS_REGEX = /^%setrolls(?:\s+(?:<@!?(\d+)>|(\d+))\s+(\d+))?$/i;
+const SETUP_REGEX = /^%setup(?:\s+(\d+)\s+([0-4])\s+([0-4]))?$/i;
 
 /**
  * @param {import('discord.js').Message} msg
  */
-async function handleSetRolls(msg) {
-  const match = msg.content.trim().match(SETROLLS_REGEX);
+async function handleSetup(msg) {
+  const match = msg.content.trim().match(SETUP_REGEX);
   if (!match) return;
 
   if (!match[1] && !match[2] && !match[3]) {
-    await msg.reply('Usage: `%setrolls <@user|userId> <amount>`');
+    await msg.reply('Usage: `%setup <maxRolls> <EmeraldBadgeLevel 0-4> <DiamondBadgeLevel 0-4>`');
     return;
   }
 
-  const targetUserId = match[1] || match[2];
-  const maxRolls = parseInt(match[3], 10);
+  const userId = msg.author.id;
+  const maxRolls = parseInt(match[1], 10);
+  const emeraldLevel = parseInt(match[2], 10);
+  const diamondLevel = parseInt(match[3], 10);
 
-  await setMaxRolls(targetUserId, maxRolls);
+  await setUserSetup(userId, { maxRolls, emeraldLevel, diamondLevel });
   await msg.react('✅');
-  console.log(`[admin] Max rolls for ${targetUserId} set to ${maxRolls} by ${msg.author.tag}.`);
+  console.log(
+    `[setup] ${msg.author.tag} (${userId}) set maxRolls=${maxRolls}, emerald=${emeraldLevel}, diamond=${diamondLevel}`
+  );
 }
 
-module.exports = { handleSetRolls };
+module.exports = { handleSetup };
