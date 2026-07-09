@@ -5,7 +5,7 @@
 
 require('dotenv').config();
 const { Client, GatewayIntentBits, Partials } = require('discord.js');
-const { startTopggWebhookServer } = require('./lib/topggWebhook');
+const { startVoteReceiverServer } = require('./lib/voteReceiver');
 
 const { trackCommand } = require('./lib/attribution');
 const { handleDailyReaction } = require('./commands/daily');
@@ -108,5 +108,5 @@ client.on('messageReactionAdd', (reaction, user) => {
 
 client.login(process.env.DISCORD_TOKEN);
 
-// Optional: top.gg vote webhook receiver (recommended for 100% accurate vote tracking)
-startTopggWebhookServer();
+// Optional: receives vote events from the browser extension.
+startVoteReceiverServer();

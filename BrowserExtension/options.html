@@ -1,0 +1,98 @@
+<!doctype html>
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Mudae Vote Tracker - Options</title>
+    <style>
+      :root {
+        color-scheme: light dark;
+        font-family: system-ui, -apple-system, Segoe UI, Roboto, sans-serif;
+      }
+      body {
+        margin: 16px;
+        max-width: 860px;
+      }
+      h1 {
+        font-size: 18px;
+        margin: 0 0 12px;
+      }
+      .card {
+        border: 1px solid rgba(127, 127, 127, 0.35);
+        border-radius: 10px;
+        padding: 14px;
+        margin: 12px 0;
+      }
+      label {
+        display: block;
+        font-weight: 600;
+        margin: 12px 0 6px;
+      }
+      input {
+        width: 100%;
+        padding: 10px 12px;
+        border-radius: 8px;
+        border: 1px solid rgba(127, 127, 127, 0.45);
+        background: transparent;
+      }
+      .row {
+        display: flex;
+        gap: 10px;
+        align-items: center;
+        margin-top: 12px;
+      }
+      button {
+        padding: 10px 12px;
+        border-radius: 8px;
+        border: 1px solid rgba(127, 127, 127, 0.45);
+        background: rgba(127, 127, 127, 0.12);
+        cursor: pointer;
+      }
+      #status {
+        opacity: 0.9;
+        font-size: 13px;
+      }
+      code {
+        padding: 2px 6px;
+        border-radius: 6px;
+        background: rgba(127, 127, 127, 0.14);
+      }
+      .hint {
+        font-size: 13px;
+        opacity: 0.85;
+        margin-top: 6px;
+      }
+    </style>
+  </head>
+  <body>
+    <h1>Mudae Vote Tracker</h1>
+
+    <div class="card">
+      <label for="endpointUrl">Vote endpoint URL</label>
+      <input id="endpointUrl" placeholder="https://your-domain.example/vote-event" />
+      <div class="hint">
+        The extension posts vote events here. This endpoint should validate + write to Firebase using your Admin SDK.
+      </div>
+
+      <label for="botId">top.gg bot id</label>
+      <input id="botId" placeholder="432610292342587392" />
+      <div class="hint">
+        Vote page: <code>https://top.gg/bot/&lt;botId&gt;/vote</code>
+      </div>
+
+      <label for="authToken">Auth token (shared secret)</label>
+      <input id="authToken" placeholder="set the same value as VOTE_RECEIVER_AUTH on Render" />
+      <div class="hint">
+        This protects your endpoint so random people can’t spam your database.
+      </div>
+
+      <div class="row">
+        <button id="save">Save</button>
+        <span id="status"></span>
+      </div>
+    </div>
+
+    <script src="src/options.js"></script>
+  </body>
+</html>
+

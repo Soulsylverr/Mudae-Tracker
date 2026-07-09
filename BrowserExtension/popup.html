@@ -1,0 +1,81 @@
+<!doctype html>
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Mudae Vote Tracker</title>
+    <style>
+      :root {
+        color-scheme: light dark;
+        font-family: system-ui, -apple-system, Segoe UI, Roboto, sans-serif;
+      }
+      body {
+        margin: 12px;
+        width: 320px;
+      }
+      .title {
+        font-weight: 700;
+        margin-bottom: 8px;
+      }
+      .card {
+        border: 1px solid rgba(127, 127, 127, 0.35);
+        border-radius: 10px;
+        padding: 10px;
+      }
+      .row {
+        display: flex;
+        justify-content: space-between;
+        gap: 10px;
+        margin: 8px 0;
+      }
+      .k {
+        opacity: 0.85;
+      }
+      code {
+        padding: 2px 6px;
+        border-radius: 6px;
+        background: rgba(127, 127, 127, 0.14);
+      }
+      .actions {
+        display: flex;
+        gap: 8px;
+        margin-top: 10px;
+      }
+      button {
+        flex: 1;
+        padding: 8px 10px;
+        border-radius: 8px;
+        border: 1px solid rgba(127, 127, 127, 0.45);
+        background: rgba(127, 127, 127, 0.12);
+        cursor: pointer;
+      }
+      .small {
+        font-size: 12px;
+        opacity: 0.8;
+        margin-top: 8px;
+        line-height: 1.35;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="title">Mudae Vote Tracker</div>
+    <div class="card">
+      <div class="row">
+        <div class="k">Detected user ID</div>
+        <div><code id="uid">—</code></div>
+      </div>
+      <div class="row">
+        <div class="k">Last vote sent</div>
+        <div><code id="lastVote">—</code></div>
+      </div>
+      <div class="actions">
+        <button id="openVote">Open vote page</button>
+        <button id="openOptions">Options</button>
+      </div>
+      <div class="small" id="hint"></div>
+    </div>
+
+    <script src="src/popup.js"></script>
+  </body>
+</html>
+
