@@ -6,41 +6,42 @@
 // time calculation is enough. This can even run directly in the plugin or web
 // app without a bot or Firebase if you want.
 //
-// PLEASE VERIFY:
-// The claim reset anchor hours (17, 20, 23, ...) were inferred from only two
-// data points Soul mentioned. Please watch them for a few days to confirm that
-// they are really accurate, including your timezone conversion, before relying
-// on them blindly.
+// Anchor hours (17:24, 20:24, 23:24, …) are in the user's local timezone
+// (verified for CEST). Mudae resets at minute :24 local time, not UTC.
+
+const ROLL_RESET_MINUTE = 24;
+const CLAIM_ANCHOR_REMAINDER = 2; // local hours where (hour % 3 === 2)
 
 /**
- * Next rolls reset: every full hour, always at minute :24 UTC.
+ * Next rolls reset: every full hour at minute :24 local time.
  * @param {Date} now
  * @returns {Date}
  */
 function nextRollsReset(now = new Date()) {
   const next = new Date(now);
-  next.setUTCMinutes(24, 0, 0);
-  if (next <= now) next.setUTCHours(next.getUTCHours() + 1);
+  next.setSeconds(0, 0);
+  next.setMilliseconds(0);
+  next.setMinutes(ROLL_RESET_MINUTE, 0, 0);
+  if (next <= now) next.setHours(next.getHours() + 1);
   return next;
 }
 
 /**
- * Next claim reset: every 3 hours at minute :24 UTC.
- * Anchor hours according to Soul: 17:24, 20:24, 23:24, 02:24, 05:24, 08:24, 11:24, 14:24
- * -> these are all UTC hours where (hour % 3 === 2).
+ * Next claim reset: every 3 hours at minute :24 local time.
+ * Anchor hours: 17:24, 20:24, 23:24, 02:24, 05:24, 08:24, 11:24, 14:24 (local).
  * @param {Date} now
  * @returns {Date}
  */
 function nextClaimReset(now = new Date()) {
-  const ANCHOR_REMAINDER = 2; // 17, 20, 23 mod 3 = 2
   const next = new Date(now);
-  next.setUTCMinutes(24, 0, 0);
+  next.setSeconds(0, 0);
+  next.setMilliseconds(0);
+  next.setMinutes(ROLL_RESET_MINUTE, 0, 0);
 
-  const currentHour = next.getUTCHours();
-  const hoursToAdd = (ANCHOR_REMAINDER - (currentHour % 3) + 3) % 3;
-  next.setUTCHours(currentHour + hoursToAdd);
-
-  if (next <= now) next.setUTCHours(next.getUTCHours() + 3);
+  while (next <= now || next.getHours() % 3 !== CLAIM_ANCHOR_REMAINDER) {
+    next.setHours(next.getHours() + 1);
+    next.setMinutes(ROLL_RESET_MINUTE, 0, 0);
+  }
   return next;
 }
 
@@ -66,8 +67,10 @@ function nextOuroharvestReset(now = new Date()) {
  */
 function currentRollWindowStart(now = new Date()) {
   const start = new Date(now);
-  start.setUTCMinutes(24, 0, 0);
-  if (start > now) start.setUTCHours(start.getUTCHours() - 1);
+  start.setSeconds(0, 0);
+  start.setMilliseconds(0);
+  start.setMinutes(ROLL_RESET_MINUTE, 0, 0);
+  if (start > now) start.setHours(start.getHours() - 1);
   return start;
 }
 
