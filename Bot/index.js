@@ -6,6 +6,7 @@
 require('dotenv').config();
 const { Client, GatewayIntentBits, Partials } = require('discord.js');
 const { startVoteReceiverServer } = require('./lib/voteReceiver');
+const { startKeepalive } = require('./lib/keepalive');
 
 const { trackCommand } = require('./lib/attribution');
 const { handleDailyReaction } = require('./commands/daily');
@@ -44,13 +45,22 @@ client.once('ready', async () => {
   console.log(`Bot online as ${client.user.tag}`);
 
   // Claim attribution relies on the member list for username-in-plain-text detection.
-  // If you run this on multiple servers, you may want to loop through all guilds here.
   for (const guild of client.guilds.cache.values()) {
     await loadGuildMembers(guild).catch((err) =>
       console.error(`[memberNames] Could not load members for ${guild.name}:`, err)
     );
   }
 });
+
+client.on('error', (err) => console.error('[discord] client error:', err));
+client.on('warn', (info) => console.warn('[discord] warn:', info));
+client.on('shardDisconnect', (event, id) =>
+  console.warn(`[discord] shard ${id} disconnected (${event})`)
+);
+client.on('shardReconnecting', (id) => console.log(`[discord] shard ${id} reconnecting`));
+client.on('shardResume', (id, replayed) =>
+  console.log(`[discord] shard ${id} resumed (${replayed} events)`)
+);
 
 // Keep the name map current if someone changes their username or nickname.
 client.on('guildMemberUpdate', (oldMember, newMember) => {
@@ -113,7 +123,13 @@ client.on('messageReactionAdd', (reaction, user) => {
   }
 });
 
-client.login(process.env.DISCORD_TOKEN);
+process.on('uncaughtException', (err) => console.error('[process] uncaughtException:', err));
+process.on('unhandledRejection', (reason) => console.error('[process] unhandledRejection:', reason));
 
-// Optional: receives vote events from the browser extension.
+client.login(process.env.DISCORD_TOKEN).catch((err) => {
+  console.error('[discord] login failed:', err);
+  process.exit(1);
+});
+
 startVoteReceiverServer();
+startKeepalive();
