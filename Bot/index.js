@@ -59,7 +59,7 @@ client.on('guildMemberUpdate', (oldMember, newMember) => {
   );
 });
 
-// 1. Track user commands (fills the pending queue for dk/p/oh/roll)
+// 1. Track user commands (fills the pending queue for dk/p/oh/oc/roll)
 client.on('messageCreate', (msg) => {
   if (msg.author.bot) return;
 
@@ -86,7 +86,7 @@ client.on('messageCreate', (msg) => {
   // through the reaction directly on the user's message.
 });
 
-// 2. Handle Mudae text replies and embeds (dk, p, oh, roll)
+// 2. Handle Mudae text replies and embeds (dk, p, oh, oc, roll, claim)
 client.on('messageCreate', (msg) => {
   if (msg.author.id !== MUDAE_BOT_ID) return;
 
