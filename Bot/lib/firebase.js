@@ -82,11 +82,13 @@ async function recordOuroharvestUsage(userId, multiplier) {
     await ref.set({
       lastResetDate: todayUTC,
       stockUsed: multiplier,
+      usesUsed: 1,
       lastUsed: Date.now(),
     });
   } else {
     await ref.update({
       stockUsed: (current.stockUsed || 0) + multiplier,
+      usesUsed: (current.usesUsed || 0) + 1,
       lastUsed: Date.now(),
     });
   }
@@ -105,6 +107,36 @@ async function setMaxRolls(userId, maxRolls) {
   if (!isTrackedUser(userId)) return;
 
   await db.ref(`/users/${userId}/config/maxRolls`).set(maxRolls);
+}
+
+const DEFAULT_EMERALD_LEVEL = 0;
+const DEFAULT_DIAMOND_LEVEL = 0;
+
+async function setUserSetup(userId, { maxRolls, emeraldLevel, diamondLevel }) {
+  if (!isTrackedUser(userId)) return;
+  const updates = {};
+  if (Number.isFinite(maxRolls)) updates['/config/maxRolls'] = maxRolls;
+  if (Number.isFinite(emeraldLevel)) {
+    updates['/config/emeraldLevel'] = emeraldLevel;
+    updates['/config/emeraldStatus'] = emeraldLevel === 0 ? 'Not unlocked yet' : 'Unlocked';
+  }
+  if (Number.isFinite(diamondLevel)) {
+    updates['/config/diamondLevel'] = diamondLevel;
+    updates['/config/diamondStatus'] = diamondLevel === 0 ? 'Not unlocked yet' : 'Unlocked';
+  }
+  await db.ref(`/users/${userId}`).update(updates);
+}
+
+async function getEmeraldLevel(userId) {
+  if (!isTrackedUser(userId)) return DEFAULT_EMERALD_LEVEL;
+  const snapshot = await db.ref(`/users/${userId}/config/emeraldLevel`).once('value');
+  return snapshot.exists() ? snapshot.val() : DEFAULT_EMERALD_LEVEL;
+}
+
+async function getDiamondLevel(userId) {
+  if (!isTrackedUser(userId)) return DEFAULT_DIAMOND_LEVEL;
+  const snapshot = await db.ref(`/users/${userId}/config/diamondLevel`).once('value');
+  return snapshot.exists() ? snapshot.val() : DEFAULT_DIAMOND_LEVEL;
 }
 
 /**
@@ -147,6 +179,16 @@ async function recordRollUsage(userId) {
   }
 }
 
+async function resetRollsUsage(userId) {
+  if (!isTrackedUser(userId)) return;
+  const ref = db.ref(`/users/${userId}/state/roll`);
+  await ref.set({
+    windowStart: currentRollWindowStart().toISOString(),
+    rollsUsed: 0,
+    lastUsed: Date.now(),
+  });
+}
+
 /**
  * Marks a user's claim as used in the current 3h window.
  * Consumers (plugin/web app) calculate "hasClaim" themselves via:
@@ -160,6 +202,17 @@ async function recordClaimUsage(userId) {
   const ref = db.ref(`/users/${userId}/state/claim`);
   await ref.set({
     lastUsedWindowStart: currentClaimWindowStart().toISOString(),
+    lastUsedAt: Date.now(),
+  });
+}
+
+async function refillClaim(userId) {
+  if (!isTrackedUser(userId)) return;
+  // Any value that is not equal to currentClaimWindowStart() will be treated
+  // as "claim available" by consumers that compare windowStart keys.
+  const ref = db.ref(`/users/${userId}/state/claim`);
+  await ref.set({
+    lastUsedWindowStart: `refilled:${Date.now()}`,
     lastUsedAt: Date.now(),
   });
 }
@@ -192,7 +245,12 @@ module.exports = {
   recordOuroharvestUsage,
   setMaxRolls,
   getMaxRolls,
+  setUserSetup,
+  getEmeraldLevel,
+  getDiamondLevel,
   recordRollUsage,
+  resetRollsUsage,
   recordClaimUsage,
+  refillClaim,
   writeVote,
 };

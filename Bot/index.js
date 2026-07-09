@@ -10,12 +10,13 @@ const { startVoteReceiverServer } = require('./lib/voteReceiver');
 const { trackCommand } = require('./lib/attribution');
 const { handleDailyReaction } = require('./commands/daily');
 const { handleRtReaction } = require('./commands/rt');
+const { handleRollsReaction } = require('./commands/rolls');
 const { handleDkMessage } = require('./commands/dk');
 const { handlePMessage } = require('./commands/p');
 const { handleOhMessage } = require('./commands/oh');
 const { handleRollMessage, isRollCommand } = require('./commands/roll');
 const { handleClaimMessage } = require('./commands/claim');
-const { handleSetRolls } = require('./commands/admin');
+const { handleSetup } = require('./commands/admin');
 const { loadGuildMembers } = require('./lib/memberNames');
 
 const MUDAE_BOT_ID = process.env.MUDAE_BOT_ID;
@@ -62,14 +63,14 @@ client.on('messageCreate', (msg) => {
   if (msg.author.bot) return;
 
   // The admin command uses its own prefix and does not collide with Mudae commands.
-  if (msg.content.trim().startsWith('%setrolls')) {
-    handleSetRolls(msg).catch((err) => console.error('[admin] Error:', err));
+  if (msg.content.trim().toLowerCase().startsWith('%setup')) {
+    handleSetup(msg).catch((err) => console.error('[setup] Error:', err));
     return;
   }
 
   const content = msg.content.trim().toLowerCase();
 
-  if (content === '$dk') {
+  if (content === '$dk' || content === '$dky') {
     trackCommand(msg.channel.id, msg.author.id, 'dk');
   } else if (content === '$p') {
     trackCommand(msg.channel.id, msg.author.id, 'p');
@@ -103,6 +104,8 @@ client.on('messageReactionAdd', (reaction, user) => {
     handleDailyReaction(reaction.message).catch((err) => console.error('[daily] Error:', err));
   } else if (originalContent === '$rt') {
     handleRtReaction(reaction.message).catch((err) => console.error('[rt] Error:', err));
+  } else if (originalContent === '$rolls') {
+    handleRollsReaction(reaction.message).catch((err) => console.error('[rolls] Error:', err));
   }
 });
 
