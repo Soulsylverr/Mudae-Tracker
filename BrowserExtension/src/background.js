@@ -83,3 +83,29 @@ chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
   return true; // async response
 });
 
+chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
+  if (!msg || msg.type !== "MUDAE_TEST_ENDPOINT") return;
+
+  (async () => {
+    const { endpointUrl, authToken, botId } = await getConfig();
+    if (!endpointUrl) return { ok: false, status: 0, text: "endpointUrl not configured" };
+
+    const url = endpointUrl.replace(/\/vote-event\/?$/, "/vote-event/validate");
+    return await postJson(
+      url,
+      {
+        source: "topgg",
+        botId: String(botId),
+        discordUserId: "0",
+        votedAt: Date.now(),
+        pageUrl: "https://top.gg/"
+      },
+      authToken
+    );
+  })()
+    .then((res) => sendResponse(res))
+    .catch((e) => sendResponse({ ok: false, status: 0, text: String(e?.message || e) }));
+
+  return true;
+});
+

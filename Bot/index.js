@@ -15,7 +15,7 @@ const { handlePMessage } = require('./commands/p');
 const { handleOhMessage } = require('./commands/oh');
 const { handleRollMessage, isRollCommand } = require('./commands/roll');
 const { handleClaimMessage } = require('./commands/claim');
-const { handleAdminCommand } = require('./commands/admin');
+const { handleSetRolls } = require('./commands/setRolls');
 const { loadGuildMembers } = require('./lib/memberNames');
 
 const MUDAE_BOT_ID = process.env.MUDAE_BOT_ID;

@@ -26,34 +26,9 @@ async function save() {
 }
 
 async function test() {
-  const endpointUrl = $("endpointUrl").value.trim();
-  const authToken = $("authToken").value.trim();
-  if (!endpointUrl) {
-    $("status").textContent = "Set endpoint URL first.";
-    return;
-  }
-
-  // Replace /vote-event with /vote-event/validate if user pasted the main endpoint.
-  const url = endpointUrl.replace(/\/vote-event\/?$/, "/vote-event/validate");
-
   $("status").textContent = "Testing…";
-  const res = await fetch(url, {
-    method: "POST",
-    headers: {
-      "content-type": "application/json",
-      ...(authToken ? { "x-mudae-auth": authToken } : {})
-    },
-    body: JSON.stringify({
-      source: "topgg",
-      botId: $("botId").value.trim() || DEFAULTS.botId,
-      discordUserId: "0",
-      votedAt: Date.now(),
-      pageUrl: "https://top.gg/"
-    })
-  });
-
-  const text = await res.text().catch(() => "");
-  $("status").textContent = res.ok ? "Test OK." : `Test failed: ${res.status} ${text}`.trim();
+  const res = await chrome.runtime.sendMessage({ type: "MUDAE_TEST_ENDPOINT" });
+  $("status").textContent = res?.ok ? "Test OK." : `Test failed: ${res?.status || 0} ${res?.text || ""}`.trim();
 }
 
 document.addEventListener("DOMContentLoaded", () => {
@@ -72,7 +47,7 @@ document.addEventListener("DOMContentLoaded", () => {
   $("test").addEventListener("click", () => {
     test().catch((e) => {
       console.error("Options test failed:", e);
-      $("status").textContent = "Test failed.";
+      $("status").textContent = `Test failed: ${String(e?.message || e)}`;
     });
   });
 });
