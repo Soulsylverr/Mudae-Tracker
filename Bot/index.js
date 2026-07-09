@@ -14,6 +14,7 @@ const { handleRollsReaction } = require('./commands/rolls');
 const { handleDkMessage } = require('./commands/dk');
 const { handlePMessage } = require('./commands/p');
 const { handleOhMessage } = require('./commands/oh');
+const { handleOcMessage } = require('./commands/oc');
 const { handleRollMessage, isRollCommand } = require('./commands/roll');
 const { handleClaimMessage } = require('./commands/claim');
 const { handleSetup } = require('./commands/admin');
@@ -76,6 +77,8 @@ client.on('messageCreate', (msg) => {
     trackCommand(msg.channel.id, msg.author.id, 'p');
   } else if (content === '$oh') {
     trackCommand(msg.channel.id, msg.author.id, 'oh');
+  } else if (content === '$oc') {
+    trackCommand(msg.channel.id, msg.author.id, 'oc');
   } else if (isRollCommand(msg.content)) {
     trackCommand(msg.channel.id, msg.author.id, 'roll');
   }
@@ -90,6 +93,7 @@ client.on('messageCreate', (msg) => {
   handleDkMessage(msg).catch((err) => console.error('[dk] Error:', err));
   handlePMessage(msg).catch((err) => console.error('[p] Error:', err));
   handleOhMessage(msg).catch((err) => console.error('[oh] Error:', err));
+  handleOcMessage(msg).catch((err) => console.error('[oc] Error:', err));
   handleRollMessage(msg).catch((err) => console.error('[roll] Error:', err));
   handleClaimMessage(msg).catch((err) => console.error('[claim] Error:', err));
 });

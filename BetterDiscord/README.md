@@ -25,7 +25,7 @@ Read-only HUD that displays timer/state data from Firebase. **All tracking logic
 
 ## Default visible stats
 
-Rolls, Claim, Daily Kakera, Daily, Vote. Enable RT, Pokeslot, and Ouroharvest in settings if you use them. RT and Ouroharvest show **Locked** when the corresponding badge is not set in `%setup`.
+Rolls, Claim, Daily Kakera, Daily, Vote. Enable RT, Pokeslot, Ouroharvest, and Ourochest in settings if you use them. RT requires Emerald badge; Ouroharvest requires Diamond; Ourochest requires Diamond level 4.
 
 ## Requirements
 

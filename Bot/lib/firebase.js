@@ -94,6 +94,39 @@ async function recordOuroharvestUsage(userId, multiplier) {
   }
 }
 
+/**
+ * $oc uses a daily charge that resets at 00:00 UTC (Diamond level 4 = 1/day).
+ *
+ * @param {string} userId
+ */
+async function recordOurochestUsage(userId) {
+  if (!isTrackedUser(userId)) return;
+
+  const ref = db.ref(`/users/${userId}/state/oc`);
+  const todayUTC = new Date().toISOString().slice(0, 10);
+
+  const snapshot = await ref.once('value');
+  const current = snapshot.val();
+
+  if (!current || current.lastResetDate !== todayUTC) {
+    await ref.set({
+      lastResetDate: todayUTC,
+      usesUsed: 1,
+      lastUsed: Date.now(),
+    });
+  } else {
+    await ref.update({
+      usesUsed: (current.usesUsed || 0) + 1,
+      lastUsed: Date.now(),
+    });
+  }
+}
+
+/** Daily $oc charges from Diamond badge (1 at level 4, none below). */
+function ocDailyLimit(diamondLevel) {
+  return Number(diamondLevel) >= 4 ? 1 : 0;
+}
+
 const { currentRollWindowStart, currentClaimWindowStart } = require('./fixedSchedules');
 
 const DEFAULT_MAX_ROLLS = 10; // Fallback if no value has been set for a user yet
@@ -243,6 +276,8 @@ module.exports = {
   writeTimer,
   ensureUserProfile,
   recordOuroharvestUsage,
+  recordOurochestUsage,
+  ocDailyLimit,
   setMaxRolls,
   getMaxRolls,
   setUserSetup,
