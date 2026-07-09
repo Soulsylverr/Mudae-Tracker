@@ -1,55 +1,81 @@
 // lib/fixedSchedules.js
 //
-// IMPORTANT: According to Soul, rolls reset, claim reset, and ouroharvest reset
-// are not individual cooldowns that start when the command is used; they are
-// fixed times. That means we do not need to read a Mudae message for them; pure
-// time calculation is enough. This can even run directly in the plugin or web
-// app without a bot or Firebase if you want.
-//
-// Anchor hours (17:24, 20:24, 23:24, …) are in the user's local timezone
-// (verified for CEST). Mudae resets at minute :24 local time, not UTC.
+// Rolls and claim windows use Europe/Berlin wall clock (:24 past the hour).
+// Ouroharvest resets at 00:00 UTC (02:00 MESZ).
 
+const SCHEDULE_TZ = 'Europe/Berlin';
 const ROLL_RESET_MINUTE = 24;
-const CLAIM_ANCHOR_REMAINDER = 2; // local hours where (hour % 3 === 2)
+const CLAIM_ANCHOR_REMAINDER = 2; // 17:24, 20:24, 23:24, … Berlin time
 
-/**
- * Next rolls reset: every full hour at minute :24 local time.
- * @param {Date} now
- * @returns {Date}
- */
-function nextRollsReset(now = new Date()) {
-  const next = new Date(now);
-  next.setSeconds(0, 0);
-  next.setMilliseconds(0);
-  next.setMinutes(ROLL_RESET_MINUTE, 0, 0);
-  if (next <= now) next.setHours(next.getHours() + 1);
-  return next;
+function berlinParts(date = new Date()) {
+  const parts = new Intl.DateTimeFormat('en-GB', {
+    timeZone: SCHEDULE_TZ,
+    year: 'numeric',
+    month: 'numeric',
+    day: 'numeric',
+    hour: 'numeric',
+    minute: 'numeric',
+    second: 'numeric',
+    hourCycle: 'h23',
+  }).formatToParts(date);
+  const pick = (type) => parseInt(parts.find((p) => p.type === type).value, 10);
+  return {
+    year: pick('year'),
+    month: pick('month'),
+    day: pick('day'),
+    hour: pick('hour'),
+    minute: pick('minute'),
+    second: pick('second'),
+  };
 }
 
-/**
- * Next claim reset: every 3 hours at minute :24 local time.
- * Anchor hours: 17:24, 20:24, 23:24, 02:24, 05:24, 08:24, 11:24, 14:24 (local).
- * @param {Date} now
- * @returns {Date}
- */
-function nextClaimReset(now = new Date()) {
-  const next = new Date(now);
-  next.setSeconds(0, 0);
-  next.setMilliseconds(0);
-  next.setMinutes(ROLL_RESET_MINUTE, 0, 0);
-
-  while (next <= now || next.getHours() % 3 !== CLAIM_ANCHOR_REMAINDER) {
-    next.setHours(next.getHours() + 1);
-    next.setMinutes(ROLL_RESET_MINUTE, 0, 0);
+function utcFromBerlin(year, month, day, hour, minute, second = 0) {
+  const base = Date.UTC(year, month - 1, day, hour, minute, second);
+  for (let offset = -3 * 3_600_000; offset <= 3 * 3_600_000; offset += 3_600_000) {
+    const candidate = new Date(base + offset);
+    const p = berlinParts(candidate);
+    if (
+      p.year === year &&
+      p.month === month &&
+      p.day === day &&
+      p.hour === hour &&
+      p.minute === minute &&
+      p.second === second
+    ) {
+      return candidate;
+    }
   }
-  return next;
+  throw new Error(`utcFromBerlin: could not resolve ${year}-${month}-${day} ${hour}:${minute}`);
 }
 
-/**
- * Next ouroharvest reset: daily at 00:00 UTC.
- * @param {Date} now
- * @returns {Date}
- */
+function atBerlinMinute(date, minute = ROLL_RESET_MINUTE) {
+  const p = berlinParts(date);
+  return utcFromBerlin(p.year, p.month, p.day, p.hour, minute, 0);
+}
+
+function addHours(date, hours) {
+  return new Date(date.getTime() + hours * 3_600_000);
+}
+
+/** Next rolls reset: every full hour at :24 Berlin time. */
+function nextRollsReset(now = new Date()) {
+  let candidate = atBerlinMinute(now);
+  if (candidate <= now) candidate = addHours(candidate, 1);
+  return atBerlinMinute(candidate);
+}
+
+/** Next claim reset: every 3 hours at :24 Berlin time. */
+function nextClaimReset(now = new Date()) {
+  let candidate = atBerlinMinute(now);
+  if (candidate <= now) candidate = atBerlinMinute(addHours(candidate, 1));
+
+  while (candidate <= now || berlinParts(candidate).hour % 3 !== CLAIM_ANCHOR_REMAINDER) {
+    candidate = atBerlinMinute(addHours(candidate, 1));
+  }
+  return candidate;
+}
+
+/** Next ouroharvest reset: daily at 00:00 UTC. */
 function nextOuroharvestReset(now = new Date()) {
   const next = new Date(
     Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate())
@@ -58,35 +84,19 @@ function nextOuroharvestReset(now = new Date()) {
   return next;
 }
 
-/**
- * Start of the current rolls time window (the last :24 time point that has already
- * passed). This is used to tell whether a rolls counter needs to be reset because
- * a new window has begun.
- * @param {Date} now
- * @returns {Date}
- */
+/** Start of the current rolls window (last :24 Berlin time that has passed). */
 function currentRollWindowStart(now = new Date()) {
-  const start = new Date(now);
-  start.setSeconds(0, 0);
-  start.setMilliseconds(0);
-  start.setMinutes(ROLL_RESET_MINUTE, 0, 0);
-  if (start > now) start.setHours(start.getHours() - 1);
-  return start;
+  return addHours(nextRollsReset(now), -1);
 }
 
-/**
- * Start of the current claim time window (the last 3h-:24 time point that has
- * already passed). This is used to know whether the "claim already used" state
- * needs to be reset because a new window has begun.
- * @param {Date} now
- * @returns {Date}
- */
+/** Start of the current claim window (last 3h :24 Berlin anchor that has passed). */
 function currentClaimWindowStart(now = new Date()) {
-  const next = nextClaimReset(now);
-  return new Date(next.getTime() - 3 * 60 * 60 * 1000);
+  return addHours(nextClaimReset(now), -3);
 }
 
 module.exports = {
+  SCHEDULE_TZ,
+  berlinParts,
   nextRollsReset,
   nextClaimReset,
   nextOuroharvestReset,

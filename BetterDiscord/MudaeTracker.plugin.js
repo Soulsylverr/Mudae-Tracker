@@ -170,42 +170,80 @@ module.exports = class MudaeTracker {
     }
   }
 
-  /* ── Schedule helpers (mirrors Bot/lib/fixedSchedules.js) ─ */
-  /* Rolls/claim reset at :24 local time (CEST verified). */
+  /* ── Schedule helpers (mirrors Bot/lib/fixedSchedules.js, Europe/Berlin) ─ */
+
+  berlinParts(date = new Date()) {
+    const parts = new Intl.DateTimeFormat("en-GB", {
+      timeZone: "Europe/Berlin",
+      year: "numeric",
+      month: "numeric",
+      day: "numeric",
+      hour: "numeric",
+      minute: "numeric",
+      second: "numeric",
+      hourCycle: "h23",
+    }).formatToParts(date);
+    const pick = (type) => parseInt(parts.find((p) => p.type === type).value, 10);
+    return {
+      year: pick("year"),
+      month: pick("month"),
+      day: pick("day"),
+      hour: pick("hour"),
+      minute: pick("minute"),
+      second: pick("second"),
+    };
+  }
+
+  utcFromBerlin(year, month, day, hour, minute, second = 0) {
+    const base = Date.UTC(year, month - 1, day, hour, minute, second);
+    for (let offset = -3 * 3_600_000; offset <= 3 * 3_600_000; offset += 3_600_000) {
+      const candidate = new Date(base + offset);
+      const p = this.berlinParts(candidate);
+      if (
+        p.year === year &&
+        p.month === month &&
+        p.day === day &&
+        p.hour === hour &&
+        p.minute === minute &&
+        p.second === second
+      ) {
+        return candidate;
+      }
+    }
+    throw new Error(`utcFromBerlin: could not resolve ${year}-${month}-${day} ${hour}:${minute}`);
+  }
+
+  atBerlinMinute(date, minute = 24) {
+    const p = this.berlinParts(date);
+    return this.utcFromBerlin(p.year, p.month, p.day, p.hour, minute, 0);
+  }
+
+  addHours(date, hours) {
+    return new Date(date.getTime() + hours * 3_600_000);
+  }
 
   nextRollsReset(now = new Date()) {
-    const next = new Date(now);
-    next.setSeconds(0, 0);
-    next.setMilliseconds(0);
-    next.setMinutes(24, 0, 0);
-    if (next <= now) next.setHours(next.getHours() + 1);
-    return next;
+    let candidate = this.atBerlinMinute(now);
+    if (candidate <= now) candidate = this.addHours(candidate, 1);
+    return this.atBerlinMinute(candidate);
   }
 
   nextClaimReset(now = new Date()) {
-    const next = new Date(now);
-    next.setSeconds(0, 0);
-    next.setMilliseconds(0);
-    next.setMinutes(24, 0, 0);
-    while (next <= now || next.getHours() % 3 !== 2) {
-      next.setHours(next.getHours() + 1);
-      next.setMinutes(24, 0, 0);
+    let candidate = this.atBerlinMinute(now);
+    if (candidate <= now) candidate = this.atBerlinMinute(this.addHours(candidate, 1));
+
+    while (candidate <= now || this.berlinParts(candidate).hour % 3 !== 2) {
+      candidate = this.atBerlinMinute(this.addHours(candidate, 1));
     }
-    return next;
+    return candidate;
   }
 
   currentRollWindowStart(now = new Date()) {
-    const start = new Date(now);
-    start.setSeconds(0, 0);
-    start.setMilliseconds(0);
-    start.setMinutes(24, 0, 0);
-    if (start > now) start.setHours(start.getHours() - 1);
-    return start;
+    return this.addHours(this.nextRollsReset(now), -1);
   }
 
   currentClaimWindowStart(now = new Date()) {
-    const next = this.nextClaimReset(now);
-    return new Date(next.getTime() - 3 * 60 * 60 * 1000);
+    return this.addHours(this.nextClaimReset(now), -3);
   }
 
   /* ── Display computation ───────────────────────────────── */
@@ -231,12 +269,15 @@ module.exports = class MudaeTracker {
       rollState?.windowStart === rollWindow ? Number(rollState.rollsUsed) || 0 : 0;
     const rollsRemaining = Math.max(0, maxRolls - rollsUsed);
 
-    const claimWindow = this.currentClaimWindowStart(now).toISOString();
+    const claimWindowStart = this.currentClaimWindowStart(now).getTime();
     const claimUsedAt = state.claim?.lastUsedWindowStart;
-    const claimAvailable =
-      !claimUsedAt ||
-      String(claimUsedAt).startsWith("refilled:") ||
-      claimUsedAt !== claimWindow;
+    const lastUsedAt = Number(state.claim?.lastUsedAt) || 0;
+    const refilled = String(claimUsedAt || "").startsWith("refilled:");
+    const usedInCurrentWindow =
+      !refilled &&
+      (lastUsedAt >= claimWindowStart ||
+        claimUsedAt === this.currentClaimWindowStart(now).toISOString());
+    const claimAvailable = !usedInCurrentWindow || refilled;
     const nextClaimReset = claimAvailable
       ? this.nextClaimReset(now).getTime()
       : this.nextClaimReset(now).getTime();

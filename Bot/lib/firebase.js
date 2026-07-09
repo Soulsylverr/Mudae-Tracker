@@ -222,9 +222,10 @@ async function recordClaimUsage(userId) {
   if (!isTrackedUser(userId)) return;
 
   const ref = db.ref(`/users/${userId}/state/claim`);
+  const now = Date.now();
   await ref.set({
     lastUsedWindowStart: currentClaimWindowStart().toISOString(),
-    lastUsedAt: Date.now(),
+    lastUsedAt: now,
   });
 }
 
