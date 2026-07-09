@@ -7,6 +7,14 @@ function nowMs() {
   return Date.now();
 }
 
+function urlContainsBotId(url, botId) {
+  try {
+    return String(url || "").includes(String(botId));
+  } catch {
+    return false;
+  }
+}
+
 function looksLikeVotePage(url, botId) {
   try {
     const u = new URL(url);
@@ -179,9 +187,98 @@ async function notifyVoteIfNeeded() {
   });
 }
 
+async function sendVoteEventFromSignal(reason) {
+  const cfg = await getConfig();
+  const discordUserId = extractDiscordUserId();
+  if (!cfg.botId) return;
+  if (!discordUserId) return;
+
+  const key = `mudae_vote_sent:${cfg.botId}:${discordUserId}`;
+  if (sessionStorage.getItem(key) === "1") return;
+  sessionStorage.setItem(key, "1");
+
+  const event = {
+    source: "topgg",
+    botId: String(cfg.botId),
+    discordUserId: String(discordUserId),
+    votedAt: nowMs(),
+    pageUrl: location.href,
+    reason
+  };
+
+  chrome.runtime.sendMessage({ type: "MUDAE_VOTE_EVENT", event }, (resp) => {
+    if (!resp?.ok) {
+      console.warn("[Mudae Vote Tracker] vote event failed:", resp);
+      sessionStorage.removeItem(key);
+    } else {
+      console.log("[Mudae Vote Tracker] vote event sent:", resp.status, reason);
+    }
+  });
+}
+
+function installNetworkHooks() {
+  // If top.gg records votes via an API call, hook it and only fire when the call succeeds.
+  // This handles cases where the URL and UI barely change.
+  const cfgPromise = getConfig();
+
+  const origFetch = window.fetch;
+  if (typeof origFetch === "function") {
+    window.fetch = async function patchedFetch(input, init) {
+      const url = typeof input === "string" ? input : input?.url;
+      const method = (init?.method || (typeof input !== "string" ? input?.method : null) || "GET").toUpperCase();
+
+      const res = await origFetch.apply(this, arguments);
+
+      try {
+        const cfg = await cfgPromise;
+        if (cfg?.botId && url && method === "POST" && urlContainsBotId(url, cfg.botId) && String(url).includes("vote")) {
+          if (res?.ok) {
+            sendVoteEventFromSignal(`fetch:${String(url).slice(0, 120)}`).catch(() => {});
+          }
+        }
+      } catch {
+        // ignore
+      }
+
+      return res;
+    };
+  }
+
+  const origOpen = XMLHttpRequest.prototype.open;
+  const origSend = XMLHttpRequest.prototype.send;
+
+  XMLHttpRequest.prototype.open = function patchedOpen(method, url) {
+    this.__mudae_method = String(method || "GET").toUpperCase();
+    this.__mudae_url = url;
+    return origOpen.apply(this, arguments);
+  };
+
+  XMLHttpRequest.prototype.send = function patchedSend() {
+    this.addEventListener("load", async () => {
+      try {
+        const cfg = await cfgPromise;
+        const url = this.__mudae_url;
+        const method = this.__mudae_method || "GET";
+        if (cfg?.botId && url && method === "POST" && urlContainsBotId(url, cfg.botId) && String(url).includes("vote")) {
+          if (this.status >= 200 && this.status < 300) {
+            sendVoteEventFromSignal(`xhr:${String(url).slice(0, 120)}`).catch(() => {});
+          }
+        }
+      } catch {
+        // ignore
+      }
+    });
+
+    return origSend.apply(this, arguments);
+  };
+}
+
 function startObserver() {
   // Immediately attempt once.
   notifyVoteIfNeeded().catch(() => {});
+
+  // Hook network requests early.
+  installNetworkHooks();
 
   // Then observe DOM changes (vote success message is often injected after captcha).
   const obs = new MutationObserver(() => {
