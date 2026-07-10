@@ -37,7 +37,7 @@ function isRollCommand(content) {
  */
 function isRollEmbed(embed) {
   const description = embed.description || '';
-  return /react with any emoji to claim/i.test(description);
+  return /react with any emoji to claim/i.test(description) || /belongs to/i.test(description);
 }
 
 /**
