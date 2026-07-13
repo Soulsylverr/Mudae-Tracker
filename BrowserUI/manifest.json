@@ -1,0 +1,30 @@
+{
+  "manifest_version": 3,
+  "name": "Mudae Tracker UI",
+  "version": "1.0.0",
+  "description": "Shows the Mudae tracker HUD directly inside Discord tabs using Firebase data.",
+  "action": {
+    "default_title": "Mudae Tracker UI",
+    "default_popup": "popup.html"
+  },
+  "options_page": "options.html",
+  "permissions": ["storage"],
+  "host_permissions": [
+    "https://discord.com/*",
+    "https://*.discord.com/*",
+    "https://discordapp.com/*",
+    "https://*.discordapp.com/*"
+  ],
+  "content_scripts": [
+    {
+      "matches": [
+        "https://discord.com/*",
+        "https://*.discord.com/*",
+        "https://discordapp.com/*",
+        "https://*.discordapp.com/*"
+      ],
+      "js": ["src/display.js"],
+      "run_at": "document_idle"
+    }
+  ]
+}

@@ -1,0 +1,72 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Mudae Tracker Display Options</title>
+    <style>
+      :root { color-scheme: dark; }
+      body {
+        margin: 0;
+        font-family: Inter, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+        background: #111214;
+        color: #f2f2f7;
+        padding: 24px;
+        box-sizing: border-box;
+      }
+      .card {
+        max-width: 620px;
+        margin: 0 auto;
+        background: #1c1d21;
+        border: 1px solid #2d2f35;
+        border-radius: 14px;
+        padding: 20px;
+      }
+      h1 { margin-top: 0; font-size: 22px; }
+      label { display: block; margin-top: 12px; font-weight: 600; font-size: 13px; }
+      input, select { width: 100%; box-sizing: border-box; margin-top: 6px; padding: 8px 10px; border-radius: 8px; border: 1px solid #3e4148; background: #101114; color: #fff; }
+      .toggle-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px 12px; margin-top: 8px; }
+      .toggle-item { display: flex; align-items: center; gap: 6px; font-size: 13px; }
+      .actions { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 16px; }
+      button { border: 0; border-radius: 8px; padding: 10px 12px; font-size: 13px; font-weight: 600; cursor: pointer; color: white; background: #5865f2; }
+      button.secondary { background: #2b2d31; }
+      .hint { font-size: 12px; color: #8e8e93; margin-top: 6px; }
+    </style>
+  </head>
+  <body>
+    <div class="card">
+      <h1>Mudae Tracker Display</h1>
+      <p class="hint">Configure the Firebase path and which tracker stats should appear in the display.</p>
+
+      <label for="firebase-url">Firebase URL</label>
+      <input id="firebase-url" type="text" />
+
+      <label for="discord-user-id">Discord User ID</label>
+      <input id="discord-user-id" type="text" />
+
+      <label for="poll-interval">Poll interval (ms)</label>
+      <input id="poll-interval" type="number" min="1000" step="1000" />
+
+      <label for="anchor">HUD anchor</label>
+      <select id="anchor">
+        <option value="bottom-right">Bottom right</option>
+        <option value="bottom-left">Bottom left</option>
+        <option value="top-right">Top right</option>
+        <option value="top-left">Top left</option>
+        <option value="custom">Custom (dragged)</option>
+      </select>
+
+      <label>Visible stats</label>
+      <div id="toggle-grid" class="toggle-grid"></div>
+
+      <div class="actions">
+        <button id="save">Save settings</button>
+        <button class="secondary" id="refresh">Refresh now</button>
+        <button class="secondary" id="reset-position">Reset position</button>
+      </div>
+      <div class="hint" id="status">Waiting for input.</div>
+    </div>
+
+    <script src="src/options.js"></script>
+  </body>
+</html>
