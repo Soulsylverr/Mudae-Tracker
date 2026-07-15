@@ -127,7 +127,11 @@ function ocDailyLimit(diamondLevel) {
   return Number(diamondLevel) >= 4 ? 1 : 0;
 }
 
-const { currentRollWindowStart, currentClaimWindowStart } = require('./fixedSchedules');
+const {
+  currentRollWindowStart,
+  currentClaimWindowStart,
+  currentPokeslotWindowStart,
+} = require('./fixedSchedules');
 
 const DEFAULT_MAX_ROLLS = 10; // Fallback if no value has been set for a user yet
 
@@ -229,6 +233,22 @@ async function recordClaimUsage(userId) {
   });
 }
 
+/**
+ * Marks a user's pokeslot as used in the current 2h fixed window.
+ * Pokeslot resets at even Berlin hours: 08:00, 10:00, 12:00, ...
+ * @param {string} userId
+ */
+async function recordPokeslotUsage(userId) {
+  if (!isTrackedUser(userId)) return;
+
+  const ref = db.ref(`/users/${userId}/state/p`);
+  const now = Date.now();
+  await ref.set({
+    lastUsedWindowStart: currentPokeslotWindowStart().toISOString(),
+    lastUsedAt: now,
+  });
+}
+
 async function refillClaim(userId) {
   if (!isTrackedUser(userId)) return;
   // Any value that is not equal to currentClaimWindowStart() will be treated
@@ -275,6 +295,7 @@ module.exports = {
   recordRollUsage,
   resetRollsUsage,
   recordClaimUsage,
+  recordPokeslotUsage,
   refillClaim,
   writeVote,
 };
