@@ -5,6 +5,8 @@
 
 const SCHEDULE_TZ = 'Europe/Berlin';
 const ROLL_RESET_MINUTE = 24;
+const POKESLOT_RESET_MINUTE = 0;
+const POKESLOT_ANCHOR_REMAINDER = 0; // 08:00, 10:00, 12:00, ... Berlin time
 const CLAIM_ANCHOR_REMAINDER = 2; // 17:24, 20:24, 23:24, … Berlin time
 
 function berlinParts(date = new Date()) {
@@ -84,6 +86,18 @@ function nextOuroharvestReset(now = new Date()) {
   return next;
 }
 
+/** Next pokeslot reset: every 2 hours at :00 Berlin time. */
+function nextPokeslotReset(now = new Date()) {
+  const p = berlinParts(now);
+  let candidate = utcFromBerlin(p.year, p.month, p.day, p.hour, POKESLOT_RESET_MINUTE, 0);
+  if (candidate <= now) candidate = addHours(candidate, 1);
+
+  while (candidate <= now || berlinParts(candidate).hour % 2 !== POKESLOT_ANCHOR_REMAINDER) {
+    candidate = addHours(candidate, 1);
+  }
+  return candidate;
+}
+
 /** Start of the current rolls window (last :24 Berlin time that has passed). */
 function currentRollWindowStart(now = new Date()) {
   return addHours(nextRollsReset(now), -1);
@@ -94,12 +108,19 @@ function currentClaimWindowStart(now = new Date()) {
   return addHours(nextClaimReset(now), -3);
 }
 
+/** Start of the current pokeslot window (last even-hour :00 Berlin anchor). */
+function currentPokeslotWindowStart(now = new Date()) {
+  return addHours(nextPokeslotReset(now), -2);
+}
+
 module.exports = {
   SCHEDULE_TZ,
   berlinParts,
   nextRollsReset,
   nextClaimReset,
   nextOuroharvestReset,
+  nextPokeslotReset,
   currentRollWindowStart,
   currentClaimWindowStart,
+  currentPokeslotWindowStart,
 };
