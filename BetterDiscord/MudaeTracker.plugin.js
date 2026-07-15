@@ -2,7 +2,7 @@
  * @name Mudae Tracker
  * @author Silas
  * @description Read-only HUD synced to Firebase. All tracking logic lives in the bot.
- * @version 4.0.0
+ * @version 4.0.1
  */
 
 module.exports = class MudaeTracker {
@@ -83,6 +83,9 @@ module.exports = class MudaeTracker {
   /* ── Lifecycle ─────────────────────────────────────────── */
 
   start() {
+    const previous = globalThis.__mudaeTrackerInstance;
+    if (previous && previous !== this) previous.stop();
+    globalThis.__mudaeTrackerInstance = this;
     this.waitForUser();
   }
 
@@ -95,6 +98,9 @@ module.exports = class MudaeTracker {
     document.removeEventListener("mouseup", this.onDragEnd);
     document.getElementById("mudae-tracker-ui")?.remove();
     BdApi.DOM.removeStyle("mudae-tracker-style");
+    if (globalThis.__mudaeTrackerInstance === this) {
+      delete globalThis.__mudaeTrackerInstance;
+    }
   }
 
   waitForUser() {
