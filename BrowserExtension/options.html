@@ -93,6 +93,18 @@
       </div>
     </div>
 
+    <div class="card">
+      <label>Manual vote trigger</label>
+      <div class="hint">
+        Use this if the extension failed to detect a vote. Enter your Discord user ID and click trigger.
+      </div>
+      <input id="manualUserId" placeholder="Your Discord user ID" />
+      <div class="row">
+        <button id="manualTrigger">Trigger vote</button>
+        <span id="manualStatus"></span>
+      </div>
+    </div>
+
     <script src="src/options.js"></script>
   </body>
 </html>

@@ -31,6 +31,31 @@ async function test() {
   $("status").textContent = res?.ok ? "Test OK." : `Test failed: ${res?.status || 0} ${res?.text || ""}`.trim();
 }
 
+async function manualTrigger() {
+  const userId = $("manualUserId").value.trim();
+  if (!userId) {
+    $("manualStatus").textContent = "Please enter your Discord user ID.";
+    return;
+  }
+  if (!/^\d{15,20}$/.test(userId)) {
+    $("manualStatus").textContent = "Invalid Discord user ID format.";
+    return;
+  }
+
+  $("manualStatus").textContent = "Sending…";
+  const stored = await chrome.storage.sync.get(DEFAULTS);
+  const event = {
+    source: "manual",
+    botId: String(stored.botId || DEFAULTS.botId),
+    discordUserId: String(userId),
+    votedAt: Date.now(),
+    pageUrl: "manual://trigger"
+  };
+
+  const res = await chrome.runtime.sendMessage({ type: "MUDAE_VOTE_EVENT", event });
+  $("manualStatus").textContent = res?.ok ? "Vote triggered successfully." : `Failed: ${res?.status || 0} ${res?.text || ""}`.trim();
+}
+
 document.addEventListener("DOMContentLoaded", () => {
   load().catch((e) => {
     console.error("Options load failed:", e);
@@ -48,6 +73,13 @@ document.addEventListener("DOMContentLoaded", () => {
     test().catch((e) => {
       console.error("Options test failed:", e);
       $("status").textContent = `Test failed: ${String(e?.message || e)}`;
+    });
+  });
+
+  $("manualTrigger").addEventListener("click", () => {
+    manualTrigger().catch((e) => {
+      console.error("Manual trigger failed:", e);
+      $("manualStatus").textContent = `Failed: ${String(e?.message || e)}`;
     });
   });
 });

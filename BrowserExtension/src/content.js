@@ -158,13 +158,23 @@ async function notifyVoteIfNeeded() {
   const discordUserId = extractDiscordUserId();
   if (discordUserId) tryReportDetectedUserId(discordUserId);
 
+  console.log("[Mudae Vote Tracker] notifyVoteIfNeeded:", {
+    botId: cfg.botId,
+    discordUserId,
+    isVotePage: looksLikeVotePage(location.href, cfg.botId),
+    hasVoteSignal: pageContainsVoteSuccessSignal()
+  });
+
   if (!looksLikeVotePage(location.href, cfg.botId)) return;
   if (!pageContainsVoteSuccessSignal()) return;
   if (!discordUserId) return;
 
   // De-dupe per user per page-load window.
   const key = `mudae_vote_sent:${cfg.botId}:${discordUserId}`;
-  if (sessionStorage.getItem(key) === "1") return;
+  if (sessionStorage.getItem(key) === "1") {
+    console.log("[Mudae Vote Tracker] Already sent vote for this session, skipping");
+    return;
+  }
   sessionStorage.setItem(key, "1");
 
   const event = {
@@ -175,6 +185,7 @@ async function notifyVoteIfNeeded() {
     pageUrl: location.href
   };
 
+  console.log("[Mudae Vote Tracker] Sending vote event:", event);
   chrome.runtime.sendMessage({ type: "MUDAE_VOTE_EVENT", event }, (resp) => {
     // Keep logs minimal but useful for debugging.
     if (!resp?.ok) {
