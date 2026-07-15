@@ -16,7 +16,7 @@ module.exports = class MudaeTracker {
       { id: "dk", label: "Daily Kakera", kind: "timer", key: "dk" },
       { id: "daily", label: "Daily", kind: "timer", key: "daily" },
       { id: "rt", label: "RT", kind: "rt" },
-      { id: "p", label: "Pokeslot", kind: "timer", key: "p" },
+      { id: "p", label: "Pokeslot", kind: "p" },
       { id: "oh", label: "Ouroharvest", kind: "oh" },
       { id: "oc", label: "Ourochest", kind: "oc" },
       { id: "vote", label: "Vote", kind: "timer", key: "vote", timeField: "readyAt", usedField: "lastVoted" },
@@ -303,12 +303,27 @@ module.exports = class MudaeTracker {
     return candidate;
   }
 
+  nextPokeslotReset(now = new Date()) {
+    const p = this.berlinParts(now);
+    let candidate = this.utcFromBerlin(p.year, p.month, p.day, p.hour, 0, 0);
+    if (candidate <= now) candidate = this.addHours(candidate, 1);
+
+    while (candidate <= now || this.berlinParts(candidate).hour % 2 !== 0) {
+      candidate = this.addHours(candidate, 1);
+    }
+    return candidate;
+  }
+
   currentRollWindowStart(now = new Date()) {
     return this.addHours(this.nextRollsReset(now), -1);
   }
 
   currentClaimWindowStart(now = new Date()) {
     return this.addHours(this.nextClaimReset(now), -3);
+  }
+
+  currentPokeslotWindowStart(now = new Date()) {
+    return this.addHours(this.nextPokeslotReset(now), -2);
   }
 
   /* ── Display computation ───────────────────────────────── */
@@ -346,6 +361,10 @@ module.exports = class MudaeTracker {
     const nextClaimReset = claimAvailable
       ? this.nextClaimReset(now).getTime()
       : this.nextClaimReset(now).getTime();
+
+    const pokeslotWindowStart = this.currentPokeslotWindowStart(now).toISOString();
+    const pokeslotUsed = state.p?.lastUsedWindowStart === pokeslotWindowStart;
+    const nextPokeslotReset = this.nextPokeslotReset(now).getTime();
 
     const timerRow = (key, timeField = "readyAt") => {
       const entry = state[key];
@@ -395,7 +414,11 @@ module.exports = class MudaeTracker {
         emeraldLevel === 0
           ? { status: "locked", value: "Locked" }
           : rtTimer,
-      p: timerRow("p"),
+      p: {
+        status: pokeslotUsed ? "used" : "ready",
+        value: this.formatTimeLeft(nextPokeslotReset),
+        detail: pokeslotUsed ? "Used" : "Ready",
+      },
       vote: timerRow("vote"),
       oh: {
         status:
@@ -743,6 +766,12 @@ module.exports = class MudaeTracker {
           <div class="mudae-row">
             <span class="mudae-label">${stat.label}</span>
             <span class="mudae-value ${this.valueClass(row.status)}">${row.value}</span>
+          </div>`;
+      } else if (stat.kind === "p") {
+        html += `
+          <div class="mudae-row">
+            <span class="mudae-label">Pokeslot · <span class="${this.valueClass(vm.p.status)}">${vm.p.detail}</span></span>
+            <span class="mudae-value mudae-wait">${vm.p.value}</span>
           </div>`;
       } else if (stat.kind === "timer") {
         const row = vm[stat.key];

@@ -9,10 +9,8 @@
 // parallel roll message in the same channel. If you use Mudae commands in a
 // dedicated channel, that risk is reduced significantly.
 
-const { writeTimer, ensureUserProfile } = require('../lib/firebase');
+const { recordPokeslotUsage, ensureUserProfile } = require('../lib/firebase');
 const { resolveAuthor } = require('../lib/attribution');
-
-const P_COOLDOWN_MINUTES = 2 * 60; // please verify this against your server value
 
 const COOLDOWN_REGEX = /remaining time before your next \$p/i;
 
@@ -33,8 +31,8 @@ async function handlePMessage(mudaeMsg) {
   }
 
   await ensureUserProfile(userId, userId);
-  await writeTimer(userId, 'p', Date.now(), P_COOLDOWN_MINUTES);
+  await recordPokeslotUsage(userId);
   console.log(`[p] Matched to UID ${userId}.`);
 }
 
-module.exports = { handlePMessage, P_COOLDOWN_MINUTES };
+module.exports = { handlePMessage };
