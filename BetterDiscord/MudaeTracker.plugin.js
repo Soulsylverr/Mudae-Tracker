@@ -2,11 +2,7 @@
  * @name Mudae Tracker
  * @author Silas
  * @description Read-only HUD synced to Firebase. All tracking logic lives in the bot.
-<<<<<<< HEAD
- * @version 4.0.0
-=======
  * @version 4.0.1
->>>>>>> 776a853bc059a9501fa8787b5a0841731a1c05a9
  */
 
 module.exports = class MudaeTracker {
@@ -53,11 +49,8 @@ module.exports = class MudaeTracker {
       pollIntervalMs: 3000,
       anchor: "bottom-right",
       customPosition: null,
-<<<<<<< HEAD
-=======
       githubRepo: "Soulsylverr/Mudae-Tracker",
       autoUpdate: true,
->>>>>>> 776a853bc059a9501fa8787b5a0841731a1c05a9
       visibility: {
         rolls: true,
         claim: true,
@@ -90,12 +83,9 @@ module.exports = class MudaeTracker {
   /* ── Lifecycle ─────────────────────────────────────────── */
 
   start() {
-<<<<<<< HEAD
-=======
     const previous = globalThis.__mudaeTrackerInstance;
     if (previous && previous !== this) previous.stop();
     globalThis.__mudaeTrackerInstance = this;
->>>>>>> 776a853bc059a9501fa8787b5a0841731a1c05a9
     this.waitForUser();
   }
 
@@ -103,20 +93,14 @@ module.exports = class MudaeTracker {
     clearInterval(this.pollTimer);
     clearInterval(this.tickTimer);
     clearInterval(this.accountTimer);
-<<<<<<< HEAD
-=======
     clearInterval(this.updateTimer);
->>>>>>> 776a853bc059a9501fa8787b5a0841731a1c05a9
     document.removeEventListener("mousemove", this.onDragMove);
     document.removeEventListener("mouseup", this.onDragEnd);
     document.getElementById("mudae-tracker-ui")?.remove();
     BdApi.DOM.removeStyle("mudae-tracker-style");
-<<<<<<< HEAD
-=======
     if (globalThis.__mudaeTrackerInstance === this) {
       delete globalThis.__mudaeTrackerInstance;
     }
->>>>>>> 776a853bc059a9501fa8787b5a0841731a1c05a9
   }
 
   waitForUser() {
@@ -144,15 +128,10 @@ module.exports = class MudaeTracker {
     this.pollTimer = setInterval(() => this.fetchCloudData(), this.settings.pollIntervalMs);
     this.tickTimer = setInterval(() => this.render(), 1000);
     this.accountTimer = setInterval(() => this.checkAccountSwitch(), 3000);
-<<<<<<< HEAD
-
-    this.fetchCloudData();
-=======
     this.updateTimer = setInterval(() => this.checkForUpdates(), 60 * 60 * 1000); // Check hourly
 
     this.fetchCloudData();
     this.checkForUpdates();
->>>>>>> 776a853bc059a9501fa8787b5a0841731a1c05a9
     BdApi.UI.showToast(`Mudae Tracker — ${this.displayName}`, { type: "success" });
   }
 
@@ -174,8 +153,6 @@ module.exports = class MudaeTracker {
     }
   }
 
-<<<<<<< HEAD
-=======
   /* ── Auto-update ─────────────────────────────────────────── */
 
   async checkForUpdates() {
@@ -236,7 +213,6 @@ module.exports = class MudaeTracker {
     }
   }
 
->>>>>>> 776a853bc059a9501fa8787b5a0841731a1c05a9
   /* ── Firebase (read-only) ──────────────────────────────── */
 
   firebaseBase() {
@@ -831,13 +807,10 @@ module.exports = class MudaeTracker {
         </label>`
     ).join("");
 
-<<<<<<< HEAD
-=======
     const updateStatus = this.updateAvailable
       ? `<span style="color:#34c759;font-size:11px;">Update available (${this.updateAvailable.date.toLocaleDateString()})</span>`
       : `<span style="color:#8e8e93;font-size:11px;">Up to date</span>`;
 
->>>>>>> 776a853bc059a9501fa8787b5a0841731a1c05a9
     panel.innerHTML = `
       <div class="mudae-settings-section">
         <div class="mudae-settings-label">Account</div>
@@ -846,8 +819,6 @@ module.exports = class MudaeTracker {
         <div style="font-size:11px;color:#b5bac1;margin-top:2px;">Read-only sync from Firebase. The bot handles all tracking.</div>
       </div>
 
-<<<<<<< HEAD
-=======
       <div class="mudae-settings-section">
         <div class="mudae-settings-label">Auto-update</div>
         <label class="mudae-toggle-item" style="margin-top:8px;">
@@ -865,7 +836,6 @@ module.exports = class MudaeTracker {
         ${this.updateAvailable ? `<button class="mudae-btn mudae-btn-primary" id="mt-update-now" style="margin-top:8px;width:100%;">Update now</button>` : ""}
       </div>
 
->>>>>>> 776a853bc059a9501fa8787b5a0841731a1c05a9
       <label><b>Firebase URL</b></label>
       <input class="mudae-settings-input" id="mt-firebase-url" value="${this.settings.firebaseUrl}" />
 
@@ -892,11 +862,8 @@ module.exports = class MudaeTracker {
       this.settings.firebaseUrl =
         panel.querySelector("#mt-firebase-url").value.trim() || this.DEFAULT_FIREBASE_URL;
       this.settings.anchor = panel.querySelector("#mt-anchor").value;
-<<<<<<< HEAD
-=======
       this.settings.githubRepo = panel.querySelector("#mt-github-repo").value.trim() || "Soulsylverr/Mudae-Tracker";
       this.settings.autoUpdate = panel.querySelector("#mt-auto-update").checked;
->>>>>>> 776a853bc059a9501fa8787b5a0841731a1c05a9
 
       panel.querySelectorAll("[data-stat]").forEach((input) => {
         this.settings.visibility[input.dataset.stat] = input.checked;
@@ -924,8 +891,6 @@ module.exports = class MudaeTracker {
       BdApi.UI.showToast("Position reset to bottom-right", { type: "info" });
     });
 
-<<<<<<< HEAD
-=======
     panel.querySelector("#mt-check-update").addEventListener("click", async () => {
       await this.checkForUpdates();
       if (this.updateAvailable) {
@@ -944,7 +909,6 @@ module.exports = class MudaeTracker {
       });
     }
 
->>>>>>> 776a853bc059a9501fa8787b5a0841731a1c05a9
     return panel;
   }
 };
